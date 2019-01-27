@@ -3,7 +3,7 @@ import pickle
 
 
 config = {}
-config['layer_specs'] = [784, 100, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
+config['layer_specs'] = [784, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
 config['activation'] = 'sigmoid' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
 config['batch_size'] = 1000  # Number of training samples per batch to be passed to network
 config['epochs'] = 50  # Number of epochs to train the model
@@ -97,6 +97,7 @@ class Activation:
     grad=self.sigmoid(self,self.x)*(1-self.sigmoid(self,self.x))
     return grad
 
+
   def grad_tanh(self):
     """
     Write the code for gradient through tanh activation function that takes in a numpy array and returns a numpy array.
@@ -122,12 +123,13 @@ class Layer():
     self.d_x = None  # Save the gradient w.r.t x in this
     self.d_w = None  # Save the gradient w.r.t w in this
     self.d_b = None  # Save the gradient w.r.t b in this
-
+    self.z = None #Save the fowrward z's
   def forward_pass(self, x):
     """
     Write the code for forward pass through a layer. Do not apply activation function here.
     """
     self.x = x
+    self.a = np.matmul(self.x,self.w) + self.b
     return self.a
   
   def backward_pass(self, delta):
@@ -135,6 +137,7 @@ class Layer():
     Write the code for backward pass. This takes in gradient from its next layer as input,
     computes gradient for its weights and the delta to pass to its previous layers.
     """
+    
     return self.d_x
 
       
@@ -144,6 +147,7 @@ class Neuralnetwork():
     self.x = None  # Save the input to forward_pass in this
     self.y = None  # Save the output vector of model in this
     self.targets = None  # Save the targets in forward_pass in this variable
+    self.lr = config['learning_rate']
     for i in range(len(config['layer_specs']) - 1):
       self.layers.append( Layer(config['layer_specs'][i], config['layer_specs'][i+1]) )
       if i < len(config['layer_specs']) - 2:
@@ -155,12 +159,34 @@ class Neuralnetwork():
     If targets == None, loss should be None. If not, then return the loss computed.
     """
     self.x = x
+    #Take the inputs X_i run it and call layer
+    temp_a = self.layers[0].forward_pass(self.layers[0],self.x)
+    #Take the output and run it through activation class
+    temp_z = self.layers[1].forward_pass(self.layers[1],temp_a)
+    self.layers[2].z = temp_z
+    
+    #Take the result of this iteration and use it as the x_i for the next layer
+    #Take the inputs X_i run it and call layer
+    temp_a_ = self.layers[2].forward_pass(self.layers[2],temp_z)
+    #Take the output and run it through activation class
+    self.y = softmax(temp_a_)
+    
+    #return y and loss
+    loss = self.loss_func(self,self.y,self.targets)
+   
+    
     return loss, self.y
 
   def loss_func(self, logits, targets):
     '''
     find cross entropy loss between logits and targets
     '''
+    c, n = targets.shape
+    cr_loss = 0
+    hyp = np.log(logits+sys.float_info.epsilon)
+    for j in range(n):
+        cr_loss += -np.dot((targets[:,j]), hyp[:,j])
+    output = cr_loss/(c*n)
     return output
     
   def backward_pass(self):
@@ -168,7 +194,24 @@ class Neuralnetwork():
     implement the backward pass for the whole network. 
     hint - use previously built functions.
     '''
-      
+    #compute the delta_k (output layer) 
+    temp_delta = self.targets -self.y
+    
+    temp_del = (np.dot(temp_delta,self.layers[2].z))
+    #Update the Vs (new weights)
+    self.layers[2].w += (self.lr)*temp_del
+    #send delta_k as input to hidden layer back_pass
+    temp_del_j = self.layers[2].backward_pass(self.layers[2],temp_del)
+    #send it to activation function
+    temp_dele = np.dot(self.layers[0].x,self.layers[1].backward_pass(self.layers[1],temp_delta_j))
+    self.layers[0].w += (self.lr)*temp_dele
+    ##Loop starts
+    #returns d_x
+    
+    #Call the activation function to get g'(a_j), gradients
+    
+    #Update w (new weights)
+    ##end of loop
 
 def trainer(model, X_train, y_train, X_valid, y_valid, config):
   """
