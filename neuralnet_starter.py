@@ -109,7 +109,7 @@ class Activation:
     """
     Write the code for gradient through ReLU activation function that takes in a numpy array and returns a numpy array.
     """
-    
+    grad= (self.x>0)*1
     return grad
 
 
@@ -137,7 +137,7 @@ class Layer():
     Write the code for backward pass. This takes in gradient from its next layer as input,
     computes gradient for its weights and the delta to pass to its previous layers.
     """
-    
+    self.d_x=np.dot(delta,self.w)
     return self.d_x
 
       
@@ -181,14 +181,10 @@ class Neuralnetwork():
     '''
     find cross entropy loss between logits and targets
     '''
-    c, n = targets.shape
-    cr_loss = 0
-    hyp = np.log(logits+sys.float_info.epsilon)
-    for j in range(n):
-        cr_loss += -np.dot((targets[:,j]), hyp[:,j])
-    output = cr_loss/(c*n)
+    N = logits.shape[0]
+    output = -np.sum(targets*np.log(logits+1e-9))/N
     return output
-    
+        
   def backward_pass(self):
     '''
     implement the backward pass for the whole network. 
