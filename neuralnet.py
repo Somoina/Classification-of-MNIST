@@ -152,11 +152,10 @@ class Layer():
     Write the code for backward pass. This takes in gradient from its next layer as input,
     computes gradient for its weights and the delta to pass to its previous layers.
     """
-    print("Check",delta.shape,self.w.shape)
-    self.d_x=np.dot(delta,self.w.T)
-    self.d_w=np.dot(delta.T,self.x)
-    self.d_b=np.dot(delta.T,self.x)
-    print("Check",delta.shape,self.w.shape)
+
+    self.d_x=np.matmul(delta,self.w.T)
+    self.d_w=np.matmul(delta.T,self.x)
+    self.d_b= sum(delta)
 
     return self.d_x
 
@@ -189,6 +188,7 @@ class Neuralnetwork():
         if isinstance(layer,Layer):
             print(layer)
             forwa = self.layers[idx].forward_pass(self.layers[idx].x)
+            self.layers[idx].a = forwa
             temp = forwa
         else:
             print('Not',layer)
@@ -229,26 +229,23 @@ class Neuralnetwork():
     hint - use previously built functions.
     '''
     if self.targets.any():
-    #compute the delta_k (output layer) 
-        temp_delta = self.targets.T - self.y
+        d = self.targets.T - self.y
         
-        temp_del = (np.dot(temp_delta.T,self.layers[2].z))
-    #Update the Vs (new weights)
-        self.layers[2].w += (self.lr)*temp_del.T
-    #send delta_k as input to hidden layer back_pass
-        temp_del_j = self.layers[2].backward_pass(temp_delta)
-        
-    #send it to activation function
-        temp_dele = np.dot(self.layers[0].x.T,self.layers[1].backward_pass(temp_del_j))
-        self.layers[0].w += (self.lr)*temp_dele
-            
-    ##Loop starts
-    #returns d_x
-    
-    #Call the activation function to get g'(a_j), gradients
-    
-    #Update w (new weights)
-    ##end of loop
+        idx =np.count_nonzero(self.layers)-1
+        #backward pass
+        for layer in (reversed(self.layers)):
+            if isinstance(layer,Layer):
+                print(layer)
+                #compute the value of d_x
+                self.layers[idx].d_x = self.layers[idx].backward_pass(d)
+                print(self.layers[idx].d_w.shape)
+               
+            else:
+                print('Not',layer)
+                self.layers[idx].x = self.layers[idx-1].a
+                d = self.layers[idx].backward_pass(self.layers[idx+1].d_x)
+            idx -=1
+            ##end of loop
 
 def trainer(model, X_train, y_train, X_valid, y_valid, config):
   """
