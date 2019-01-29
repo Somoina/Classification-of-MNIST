@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue Jan 29 11:17:53 2019
+
+@author: Nash
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Mon Jan 28 14:01:57 2019
 
 @author: Gitika
@@ -10,7 +17,7 @@ import pickle
 
 
 config = {}
-config['layer_specs'] = [784, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
+config['layer_specs'] = [784, 100, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
 config['activation'] = 'sigmoid' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
 config['batch_size'] = 1000  # Number of training samples per batch to be passed to network
 config['epochs'] = 50  # Number of epochs to train the model
@@ -145,10 +152,11 @@ class Layer():
     Write the code for backward pass. This takes in gradient from its next layer as input,
     computes gradient for its weights and the delta to pass to its previous layers.
     """
-    self.d_x=np.dot(delta,self.w)
-    self.d_w=np.dot(delta,self.x)
-    self.d_b=np.dot(delta,self.x)
-    print(delta.shape,self.x.shape)
+    print("Check",delta.shape,self.w.shape)
+    self.d_x=np.dot(delta,self.w.T)
+    self.d_w=np.dot(delta.T,self.x)
+    self.d_b=np.dot(delta.T,self.x)
+    print("Check",delta.shape,self.w.shape)
 
     return self.d_x
 
@@ -173,17 +181,27 @@ class Neuralnetwork():
     self.x = x
     self.targets= targets
     #Take the inputs X_i run it and call layer
-    temp_a = self.layers[0].forward_pass(self.x)
-    #Take the output and run it through activation class
-    temp_z = self.layers[1].forward_pass(temp_a)
-    self.layers[2].z = temp_z
-    
-    #Take the result of this iteration and use it as the x_i for the next layer
-    #Take the inputs X_i run it and call layer
-    temp_a_ = self.layers[2].forward_pass(temp_z)
-    #Take the output and run it through activation class
-    self.y = softmax(temp_a_)
-    
+    self.layers[0].x = self.x  
+    idx = 0
+    temp =0 
+    for layer in (self.layers):
+
+        if isinstance(layer,Layer):
+            print(layer)
+            forwa = self.layers[idx].forward_pass(self.layers[idx].x)
+            temp = forwa
+        else:
+            print('Not',layer)
+            
+            zed = self.layers[idx].forward_pass(temp)
+            self.layers[idx-1].z = zed
+            self.layers[idx+1].x = zed
+        print(idx)
+
+        
+        idx+=1
+    self.layers[idx-1].z = softmax(temp) 
+    self.y = self.layers[idx-1].z
     #return y and loss
     loss = self.loss_func(self.y,self.targets)
    
@@ -195,9 +213,11 @@ class Neuralnetwork():
     find cross entropy loss between logits and targets
     '''
     N = logits.shape[0]
+    targets =targets[:,np.newaxis]
+    
     self.targets=targets
     if self.targets.any():
-        output = -np.sum(self.targets*np.log(logits+1e-9))/N
+        output = -np.sum(np.matmul(self.targets,np.log(logits+1e-9)))/N
         return output
     else:
         return None
@@ -208,25 +228,19 @@ class Neuralnetwork():
     implement the backward pass for the whole network. 
     hint - use previously built functions.
     '''
-    print('Alive')
-    if self.targets!=None:
+    if self.targets.any():
     #compute the delta_k (output layer) 
-        temp_delta = self.targets - self.y
-        print(temp_delta)
-        temp_del = (np.dot(temp_delta,self.layers[2].z))
-       
-    #Update the Vs (new weights)
-        self.layers[2].w += (self.lr)*temp_del
-    #send delta_k as input to hidden layer back_pass
-        temp_del_j = self.layers[2].backward_pass(temp_del)
-        print(temp_del_j)
-        print("Alive")
-    #send it to activation function
-        temp_dele = np.dot(self.layers[0].x,self.layers[1].backward_pass(temp_delta_j))
-        self.layers[0].w += (self.lr)*temp_dele
+        temp_delta = self.targets.T - self.y
         
-        temp_d = np.dot(self.layers[0].x,self.layers[1].backward_pass(temp_delta_j))
-
+        temp_del = (np.dot(temp_delta.T,self.layers[2].z))
+    #Update the Vs (new weights)
+        self.layers[2].w += (self.lr)*temp_del.T
+    #send delta_k as input to hidden layer back_pass
+        temp_del_j = self.layers[2].backward_pass(temp_delta)
+        
+    #send it to activation function
+        temp_dele = np.dot(self.layers[0].x.T,self.layers[1].backward_pass(temp_del_j))
+        self.layers[0].w += (self.lr)*temp_dele
             
     ##Loop starts
     #returns d_x
