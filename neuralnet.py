@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 28 14:01:57 2019
+
+@author: Gitika
+"""
+
 import numpy as np
 import pickle
 
@@ -124,6 +131,7 @@ class Layer():
     self.d_w = None  # Save the gradient w.r.t w in this
     self.d_b = None  # Save the gradient w.r.t b in this
     self.z = None #Save the fowrward z's
+   
   def forward_pass(self, x):
     """
     Write the code for forward pass through a layer. Do not apply activation function here.
@@ -140,6 +148,8 @@ class Layer():
     self.d_x=np.dot(delta,self.w)
     self.d_w=np.dot(delta,self.x)
     self.d_b=np.dot(delta,self.x)
+    print(delta.shape,self.x.shape)
+
     return self.d_x
 
       
@@ -155,12 +165,13 @@ class Neuralnetwork():
       if i < len(config['layer_specs']) - 2:
         self.layers.append(Activation(config['activation']))  
     
-  def forward_pass(self, x, targets=None):
+  def forward_pass(self, x, targets):
     """
     Write the code for forward pass through all layers of the model and return loss and predictions.
     If targets == None, loss should be None. If not, then return the loss computed.
     """
     self.x = x
+    self.targets= targets
     #Take the inputs X_i run it and call layer
     temp_a = self.layers[0].forward_pass(self.x)
     #Take the output and run it through activation class
@@ -185,29 +196,38 @@ class Neuralnetwork():
     '''
     N = logits.shape[0]
     self.targets=targets
-    if self.targets==None:
-        return None
-    else:
+    if self.targets.any():
         output = -np.sum(self.targets*np.log(logits+1e-9))/N
         return output
+    else:
+        return None
+        
         
   def backward_pass(self):
     '''
     implement the backward pass for the whole network. 
     hint - use previously built functions.
     '''
+    print('Alive')
     if self.targets!=None:
     #compute the delta_k (output layer) 
         temp_delta = self.targets - self.y
-    
+        print(temp_delta)
         temp_del = (np.dot(temp_delta,self.layers[2].z))
+       
     #Update the Vs (new weights)
         self.layers[2].w += (self.lr)*temp_del
     #send delta_k as input to hidden layer back_pass
         temp_del_j = self.layers[2].backward_pass(temp_del)
+        print(temp_del_j)
+        print("Alive")
     #send it to activation function
         temp_dele = np.dot(self.layers[0].x,self.layers[1].backward_pass(temp_delta_j))
         self.layers[0].w += (self.lr)*temp_dele
+        
+        temp_d = np.dot(self.layers[0].x,self.layers[1].backward_pass(temp_delta_j))
+
+            
     ##Loop starts
     #returns d_x
     
