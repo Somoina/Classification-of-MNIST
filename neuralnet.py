@@ -225,7 +225,7 @@ class Neuralnetwork():
                 #print(layer)
                 #compute the value of d_x
                 self.layers[idx].d_x = self.layers[idx].backward_pass(d)
-            
+
                 self.layers[idx].w += self.lr*(self.layers[idx].d_w)
                 self.layers[idx].b += self.lr*(self.layers[idx].d_b)
                
@@ -244,9 +244,9 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
   loss_best=math.inf
   for epoch in range(config['epochs']):
       for i in range (int((X_train.shape[0])/(config['batch_size']))):
-          lab=(y_train[(i*1000):(i*1000)+1000,]).astype(int)
+          lab=(y_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],]).astype(int)
           lab=one_hot(lab, 10)
-          model.forward_pass(X_train[(i*1000):(i*1000)+1000,:],lab)
+          model.forward_pass(X_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],:],lab)
           model.backward_pass
       (loss_valid,y_valid_logits)=model.forward_pass(X_valid, y_valid)
       if loss_valid<loss_best:
