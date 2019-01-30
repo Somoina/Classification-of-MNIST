@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 30 13:26:09 2019
+Created on Wed Jan 30 14:05:41 2019
 
-@author: Nash
+@author: meher
 """
 
-# -*- coding: utf-8 -*-
 import numpy as np
 import pickle
 import math
@@ -135,7 +134,8 @@ class Layer():
     self.d_w = None  # Save the gradient w.r.t w in this
     self.d_b = None  # Save the gradient w.r.t b in this
     self.z = None #Save the fowrward z's
-   
+    self.prev_dw=None
+    self.prev_db=None
   def forward_pass(self, x):
     """
     Write the code for forward pass through a layer. Do not apply activation function here.
@@ -149,10 +149,11 @@ class Layer():
     Write the code for backward pass. This takes in gradient from its next layer as input,
     computes gradient for its weights and the delta to pass to its previous layers.
     """
-
+    self.prev_dw=self.d_w
+    self.prev_db=self.d_b
     self.d_x=np.matmul(delta,self.w.T)
     self.d_w=np.matmul(delta.T,self.x)
-    self.d_b= sum(delta)
+    self.d_b= np.sum(delta,axis=0)
 
     return self.d_x
 
@@ -235,9 +236,13 @@ class Neuralnetwork():
                 #print(layer)
                 #compute the value of d_x
                 self.layers[idx].d_x = self.layers[idx].backward_pass(d)
-
-                self.layers[idx].w += self.lr*(self.layers[idx].d_w.T)
-                self.layers[idx].b += self.lr*(self.layers[idx].d_b)
+                if self.layers[idx].prev_dw is not None:
+                #if 1==0:
+                    self.layers[idx].w =  self.layers[idx].w +(1-config['momentum_gamma'])* self.lr*(self.layers[idx].d_w.T) + config['momentum_gamma']*(self.layers[idx].prev_dw.T)* self.lr
+                    self.layers[idx].b = self.layers[idx].b + (1-config['momentum_gamma'])*self.lr*(self.layers[idx].d_b) + config['momentum_gamma']*(self.layers[idx].prev_db)* self.lr
+                else:
+                    self.layers[idx].w += self.lr*(self.layers[idx].d_w.T)
+                    self.layers[idx].b += self.lr*(self.layers[idx].d_b)
                
             else:
                 #print('Not',layer)
