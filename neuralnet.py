@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Wed Jan 30 13:26:09 2019
+
+@author: Nash
+"""
+
+# -*- coding: utf-8 -*-
 import numpy as np
 import pickle
 import math
@@ -19,7 +26,10 @@ def softmax(x):
   """
   Write the code for softmax activation function that takes in a numpy array and returns a numpy array.
   """
-  output=np.exp(x) / np.sum(np.exp(x), axis=0)
+  
+  div = np.sum(np.exp(x), axis=1)[:,np.newaxis]
+  
+  output=np.exp(x) / div
   return output
 
 
@@ -153,7 +163,7 @@ class Neuralnetwork():
     self.x = None  # Save the input to forward_pass in this
     self.y = None  # Save the output vector of model in this
     self.targets = None  # Save the targets in forward_pass in this variable
-    self.lr = 0.0001
+    self.lr = 0.001
     for i in range(len(config['layer_specs']) - 1):
       self.layers.append( Layer(config['layer_specs'][i], config['layer_specs'][i+1]) )
       if i < len(config['layer_specs']) - 2:
@@ -216,7 +226,7 @@ class Neuralnetwork():
     hint - use previously built functions.
     '''
     if self.targets.any():
-        d = self.targets.T - self.y
+        d = self.targets - self.y
         
         idx =np.count_nonzero(self.layers)-1
         #backward pass
@@ -226,7 +236,7 @@ class Neuralnetwork():
                 #compute the value of d_x
                 self.layers[idx].d_x = self.layers[idx].backward_pass(d)
 
-                self.layers[idx].w += self.lr*(self.layers[idx].d_w)
+                self.layers[idx].w += self.lr*(self.layers[idx].d_w.T)
                 self.layers[idx].b += self.lr*(self.layers[idx].d_b)
                
             else:
@@ -247,7 +257,7 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
           lab=(y_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],]).astype(int)
           lab=one_hot(lab, 10)
           model.forward_pass(X_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],:],lab)
-          model.backward_pass
+          model.backward_pass()
       (loss_valid,y_valid_logits)=model.forward_pass(X_valid, y_valid)
       if loss_valid<loss_best:
           loss_best=loss_valid
