@@ -1,20 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jan 29 11:17:53 2019
-
-@author: Nash
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 28 14:01:57 2019
-
-@author: Gitika
-"""
-
 import numpy as np
 import pickle
-
+import math
 
 config = {}
 config['layer_specs'] = [784, 100, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
@@ -43,7 +30,7 @@ def load_data(fname):
   """
   file = open('data/'+fname,'rb')
   data = pickle.load(file)
-  images= data[:,0:785]
+  images= data[:,0:784]
   labels= data[:,-1]
   return images, labels
 
@@ -186,17 +173,17 @@ class Neuralnetwork():
     for layer in (self.layers):
 
         if isinstance(layer,Layer):
-            print(layer)
+            #print(layer)
             forwa = self.layers[idx].forward_pass(self.layers[idx].x)
             self.layers[idx].a = forwa
             temp = forwa
         else:
-            print('Not',layer)
+            #print('Not',layer)
             
             zed = self.layers[idx].forward_pass(temp)
             self.layers[idx-1].z = zed
             self.layers[idx+1].x = zed
-        print(idx)
+        #print(idx)
 
         
         idx+=1
@@ -213,11 +200,11 @@ class Neuralnetwork():
     find cross entropy loss between logits and targets
     '''
     N = logits.shape[0]
-    targets =targets[:,np.newaxis]
+    #targets =targets[:,np.newaxis]
     
     self.targets=targets
     if self.targets.any():
-        output = -np.sum(np.matmul(self.targets,np.log(logits+1e-9)))/N
+        output = -np.sum(np.dot(self.targets.T,np.log(logits+1e-9)))/N
         return output
     else:
         return None
@@ -235,13 +222,15 @@ class Neuralnetwork():
         #backward pass
         for layer in (reversed(self.layers)):
             if isinstance(layer,Layer):
-                print(layer)
+                #print(layer)
                 #compute the value of d_x
                 self.layers[idx].d_x = self.layers[idx].backward_pass(d)
-                print(self.layers[idx].d_w.shape)
+            
+                self.layers[idx].w += self.lr*(self.layers[idx].d_w)
+                self.layers[idx].b += self.lr*(self.layers[idx].d_b)
                
             else:
-                print('Not',layer)
+                #print('Not',layer)
                 self.layers[idx].x = self.layers[idx-1].a
                 d = self.layers[idx].backward_pass(self.layers[idx+1].d_x)
             idx -=1
@@ -252,12 +241,30 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
   Write the code to train the network. Use values from config to set parameters
   such as L2 penalty, number of epochs, momentum, etc.
   """
-  
+  loss_best=math.inf
+  for epoch in range(config['epochs']):
+      for i in range (int((X_train.shape[0])/(config['batch_size']))):
+          lab=(y_train[(i*1000):(i*1000)+1000,]).astype(int)
+          lab=one_hot(lab, 10)
+          model.forward_pass(X_train[(i*1000):(i*1000)+1000,:],lab)
+          model.backward_pass
+      (loss_valid,y_valid_logits)=model.forward_pass(X_valid, y_valid)
+      if loss_valid<loss_best:
+          loss_best=loss_valid
+          model_best=model
+  return model_best
   
 def test(model, X_test, y_test, config):
   """
   Write code to run the model on the data passed as input and return accuracy.
   """
+  count=0
+  (l,y_logits)=model.forward_pass(X_test, y_test)
+  y_obtained=np.argmax(y_logits, axis=1)
+  for i in range(y_test.shape[0]):
+      if y_obtained[i,]==y_test[i,]:
+          count +=1
+  accuracy=count/y_test.shape[0]
   return accuracy
       
 
@@ -271,5 +278,5 @@ if __name__ == "__main__":
   X_train, y_train = load_data(train_data_fname)
   X_valid, y_valid = load_data(valid_data_fname)
   X_test, y_test = load_data(test_data_fname)
-  trainer(model, X_train, y_train, X_valid, y_valid, config)
-  test_acc = test(model, X_test, y_test, config)
+  model_best=trainer(model, X_train, y_train, X_valid, y_valid, config)
+  test_acc = test(model_best, X_test, y_test, config)
