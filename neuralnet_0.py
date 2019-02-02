@@ -223,7 +223,7 @@ class Neuralnetwork():
     self.targets=targets
     if self.targets.any():
        
-        output = -np.sum(np.dot(self.targets.T,np.log(logits+1e-9)))/(N*c)
+        output = -np.sum(np.dot(self.targets.T,np.log(logits)))/(N*c)
         return output
     else:
         return None
@@ -275,17 +275,17 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
          
           lab=(y_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],]).astype(int)
           lab=one_hot(lab, 10)
-          model.forward_pass(X_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],:],lab)
+          (loss_training, y_training_logits) = model.forward_pass(X_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],:],lab)
           model.backward_pass()
-      (loss_training, y_training_logits) = model.forward_pass(X_train, y_train)     
+      #(loss_training, y_training_logits) = model.forward_pass(X_train, y_train)     
       (loss_valid,y_valid_logits)=model.forward_pass(X_valid, y_valid)
       Loss_valid[:,epoch] = loss_valid
       Loss_train[:,epoch] = loss_training
       #Get the accuracy
       acc_valid = get_accuracy(y_valid_logits,y_valid)
-      acc_train = get_accuracy(y_training_logits,y_train)
+#      acc_train = get_accuracy(y_training_logits,y_train)
       Acc_valid[:,epoch] = acc_valid
-      Acc_train[:,epoch] = acc_train
+#      Acc_train[:,epoch] = acc_train
       
       if loss_valid<loss_best:
           print("run")
@@ -300,7 +300,7 @@ def get_accuracy(hyp,target):
     for i in range(target.shape[0]):
          if y_obtained[i,]==target[i,]:
               count +=1
-    accuracy=count/y_test.shape[0]
+    accuracy=count/target.shape[0]
     return accuracy
     
 def test(model, X_test, y_test, config):
@@ -329,10 +329,21 @@ if __name__ == "__main__":
   X=np.linspace(0,config['epochs'],50).reshape((50,1))
   Y=Loss_valid.reshape((50,1))
   Z=Loss_training.reshape((50,1))
-  plt.yticks(np.arange(40, 70, step=0.2))
-  plt.plot(X,Y)
-  plt.plot(X,Z)
+  plt.figure(figsize=(10,10))
+  plt.plot(X,Y,'b')
+  plt.plot(X,Z,'r')
   plt.ylabel('Cross-entropy Loss')
   plt.xlabel('Epochs')
-  plt.title('title')
+  plt.title('Validation and Training Loss')
+  plt.figure(figsize=(40,1))
   plt.show()
+  Y_v = A_valid.reshape((50,1))
+  Y_tr = A_training.reshape((50,1))
+  plt.plot(X,Y_v,'b')
+  plt.plot(X,Y_tr,'r')
+  plt.ylabel('Accuracy')
+  plt.xlabel('Epochs')
+  plt.title('Validation and Training Accuracy')
+  plt.figure(figsize=(40,1))
+  plt.show()
+  
