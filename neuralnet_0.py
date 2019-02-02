@@ -18,7 +18,7 @@ import math
 import matplotlib.pyplot as plt
 config = {}
 config['layer_specs'] = [784, 100, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
-config['activation'] = 'ReLU' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
+config['activation'] = 'tanh' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
 config['batch_size'] = 1000  # Number of training samples per batch to be passed to network
 config['epochs'] = 50  # Number of epochs to train the model
 config['early_stop'] = True  # Implement early stopping or not
@@ -132,9 +132,9 @@ class Activation:
 
 class Layer():
   def __init__(self, in_units, out_units):
-    np.random.seed(42)
-    self.w = 0.095*np.random.randn(in_units, out_units)  # Weight matrix
-    self.b = 0.095*np.zeros((1, out_units)).astype(np.float32)  # Bias
+    
+    self.w = np.random.randn(in_units, out_units)  # Weight matrix
+    self.b = np.zeros((1, out_units)).astype(np.float32)  # Bias
     self.x = None  # Save the input to forward_pass in this
     self.a = None  # Save the output of forward pass in this (without activation)
     self.d_x = None  # Save the gradient w.r.t x in this
@@ -171,7 +171,7 @@ class Neuralnetwork():
     self.x = None  # Save the input to forward_pass in this
     self.y = None  # Save the output vector of model in this
     self.targets = None  # Save the targets in forward_pass in this variable
-    self.lr = 0.00008
+    self.lr = 0.001
     for i in range(len(config['layer_specs']) - 1):
       self.layers.append( Layer(config['layer_specs'][i], config['layer_specs'][i+1]) )
       if i < len(config['layer_specs']) - 2:
@@ -266,9 +266,11 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
   """
   Loss_valid = np.zeros([1,config['epochs']])
   Loss_train = np.zeros([1,config['epochs']])
+  Acc_valid = np.zeros([1,config['epochs']])
+  Acc_train = np.zeros([1,config['epochs']])
   loss_best=math.inf
   for epoch in range(config['epochs']):
-     
+  #for epoch in range (15):  
       for i in range (int((X_train.shape[0])/(config['batch_size']))):
          
           lab=(y_train[(i*config['batch_size']):(i*config['batch_size'])+config['batch_size'],]).astype(int)
@@ -279,30 +281,36 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
       (loss_valid,y_valid_logits)=model.forward_pass(X_valid, y_valid)
       Loss_valid[:,epoch] = loss_valid
       Loss_train[:,epoch] = loss_training
+      #Get the accuracy
+      acc_valid = get_accuracy(y_valid_logits,y_valid)
+      acc_train = get_accuracy(y_training_logits,y_train)
+      Acc_valid[:,epoch] = acc_valid
+      Acc_train[:,epoch] = acc_train
+      
       if loss_valid<loss_best:
           print("run")
           loss_best=loss_valid
           model_best=model
-  return model_best, Loss_valid, Loss_train
+  return model_best, Loss_valid, Loss_train, Acc_valid, Acc_train
 
-def plot(Y,X, title):
-    plt.figure()
-    plt.errorbar(X,Y)
-    plt.ylabel('Cross-entropy Loss')
-    plt.xlabel('Epochs')
-    plt.title(title)
   
+def get_accuracy(hyp,target):
+    count = 0
+    y_obtained=np.argmax(hyp, axis=1)
+    for i in range(target.shape[0]):
+         if y_obtained[i,]==target[i,]:
+              count +=1
+    accuracy=count/y_test.shape[0]
+    return accuracy
+    
 def test(model, X_test, y_test, config):
   """
   Write code to run the model on the data passed as input and return accuracy.
   """
-  count=0
   (l,y_logits)=model.forward_pass(X_test, y_test)
-  y_obtained=np.argmax(y_logits, axis=1)
-  for i in range(y_test.shape[0]):
-      if y_obtained[i,]==y_test[i,]:
-          count +=1
-  accuracy=count/y_test.shape[0]
+  
+ 
+  accuracy= get_accuracy(y_logits,y_test)
   return accuracy
       
 
@@ -316,7 +324,15 @@ if __name__ == "__main__":
   X_train, y_train = load_data(train_data_fname)
   X_valid, y_valid = load_data(valid_data_fname)
   X_test, y_test = load_data(test_data_fname)
-  (model_best, Loss_valid, Loss_training)=trainer(model, X_train, y_train, X_valid, y_valid, config)
+  (model_best, Loss_valid, Loss_training, A_valid, A_training)=trainer(model, X_train, y_train, X_valid, y_valid, config)
   test_acc = test(model_best, X_test, y_test, config)
-  plot(Loss_valid,range(config['epochs']), "Validation Loss over training Epochs")
-  plot(Loss_training,range(config['epochs']), " Training Loss over training Epochs")
+  X=np.linspace(0,config['epochs'],50).reshape((50,1))
+  Y=Loss_valid.reshape((50,1))
+  Z=Loss_training.reshape((50,1))
+  plt.yticks(np.arange(40, 70, step=0.2))
+  plt.plot(X,Y)
+  plt.plot(X,Z)
+  plt.ylabel('Cross-entropy Loss')
+  plt.xlabel('Epochs')
+  plt.title('title')
+  plt.show()
