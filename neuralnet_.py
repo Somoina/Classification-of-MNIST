@@ -233,12 +233,12 @@ class Neuralnetwork():
                 self.layers[idx].d_x = self.layers[idx].backward_pass(d)
                 if self.layers[idx].prev_dw is not None:
                 #if 1==0:
-                    self.layers[idx].w =  self.layers[idx].w +(1-config['momentum_gamma'])* self.lr*(self.layers[idx].d_w.T) + config['momentum_gamma']*(self.layers[idx].prev_dw.T)* self.lr
-                    self.layers[idx].b = self.layers[idx].b + (1-config['momentum_gamma'])*self.lr*(self.layers[idx].d_b) + config['momentum_gamma']*(self.layers[idx].prev_db)* self.lr
+                    self.layers[idx].w = (1-(1/(2*M))*config['L2_penalty'])*self.layers[idx].w + self.lr*(self.layers[idx].d_w.T) + (config['momentum_gamma'])*(self.layers[idx].prev_dw.T)* self.lr
+                    self.layers[idx].b = self.layers[idx].b + self.lr*(self.layers[idx].d_b) +(config['momentum_gamma'])* (self.layers[idx].prev_db)* self.lr
                 else:
                     self.layers[idx].w = (1-(1/(2*M))*config['L2_penalty'])*self.layers[idx].w + self.lr*(self.layers[idx].d_w.T)
                     self.layers[idx].b += self.lr*(self.layers[idx].d_b)
-               
+                              
             else:
                 #print('Not',layer)
                 self.layers[idx].x = self.layers[idx-1].a
