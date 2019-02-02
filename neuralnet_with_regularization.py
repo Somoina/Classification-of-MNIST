@@ -17,7 +17,7 @@ config['epochs'] = 50  # Number of epochs to train the model
 config['early_stop'] = True  # Implement early stopping or not
 config['early_stop_epoch'] = 5  # Number of epochs for which validation loss increases to be counted as overfitting
 config['L2_penalty'] = 0.001  # Regularization constant
-config['momentum'] = False  # Denotes if momentum is to be applied or not
+config['momentum'] = True  # Denotes if momentum is to be applied or not
 config['momentum_gamma'] = 0.9  # Denotes the constant 'gamma' in momentum expression
 config['learning_rate'] = 0.0001 # Learning rate of gradient descent algorithm
 
@@ -239,10 +239,10 @@ class Neuralnetwork():
                 self.layers[idx].d_x = self.layers[idx].backward_pass(d)
                 if self.layers[idx].prev_dw is not None:
                 #if 1==0:
-                    self.layers[idx].w = (1-self.lr*(1/M)*config['L2_penalty'])*self.layers[idx].w +(1-config['momentum_gamma'])* self.lr*(self.layers[idx].d_w.T) + config['momentum_gamma']*(self.layers[idx].prev_dw.T)* self.lr
-                    self.layers[idx].b = self.layers[idx].b + (1-config['momentum_gamma'])*self.lr*(self.layers[idx].d_b) + config['momentum_gamma']*(self.layers[idx].prev_db)* self.lr
+                    self.layers[idx].w = (1-(1/(2*M))*config['L2_penalty'])*self.layers[idx].w + self.lr*(self.layers[idx].d_w.T) + (config['momentum_gamma'])*(self.layers[idx].prev_dw.T)* self.lr
+                    self.layers[idx].b = self.layers[idx].b + self.lr*(self.layers[idx].d_b) +(config['momentum_gamma'])* (self.layers[idx].prev_db)* self.lr
                 else:
-                    self.layers[idx].w = (1-self.lr*(1/M)*config['L2_penalty'])*self.layers[idx].w + self.lr*(self.layers[idx].d_w.T)
+                    self.layers[idx].w = (1-(1/(2*M))*config['L2_penalty'])*self.layers[idx].w + self.lr*(self.layers[idx].d_w.T)
                     self.layers[idx].b += self.lr*(self.layers[idx].d_b)
                
             else:
