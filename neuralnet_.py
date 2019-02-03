@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Feb  1 16:19:08 2019
+Created on Sat Feb  2 13:21:35 2019
 
 @author: meher
 """
@@ -10,16 +10,17 @@ import pickle
 import math
 import matplotlib.pyplot as plt
 config = {}
-config['layer_specs'] = [784, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
-config['activation'] = 'sigmoid' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
+config['layer_specs'] = [784, 100,100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
+config['activation'] = 'tanh' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
 config['batch_size'] = 1000  # Number of training samples per batch to be passed to network
 config['epochs'] = 50  # Number of epochs to train the model
 config['early_stop'] = True  # Implement early stopping or not
 config['early_stop_epoch'] = 5  # Number of epochs for which validation loss increases to be counted as overfitting
-config['L2_penalty'] = 0  # Regularization constant
+config['L2_penalty'] = 0.001  # Regularization constant
 config['momentum'] = False  # Denotes if momentum is to be applied or not
 config['momentum_gamma'] = 0.9 # Denotes the constant 'gamma' in momentum expression
-config['learning_rate'] = 0.0001 # Learning rate of gradient descent algorithm
+config['learning_rate'] = 0.0003 # Learning rate of gradient descent algorithm
+
 
 def softmax(x):
   """
@@ -125,7 +126,7 @@ class Activation:
 
 class Layer():
   def __init__(self, in_units, out_units):
-    np.random.seed(40)
+    np.random.seed(42)
     self.w = np.random.randn(in_units, out_units)  # Weight matrix
     self.b = np.zeros((1, out_units)).astype(np.float32)  # Bias
     self.x = None  # Save the input to forward_pass in this
@@ -164,7 +165,7 @@ class Neuralnetwork():
     self.x = None  # Save the input to forward_pass in this
     self.y = None  # Save the output vector of model in this
     self.targets = None  # Save the targets in forward_pass in this variable
-    self.lr =  0.0009
+    self.lr = config['learning_rate']
     for i in range(len(config['layer_specs']) - 1):
       self.layers.append( Layer(config['layer_specs'][i], config['layer_specs'][i+1]) )
       if i < len(config['layer_specs']) - 2:
@@ -251,13 +252,13 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
   Write the code to train the network. Use values from config to set parameters
   such as L2 penalty, number of epochs, momentum, etc.
   """
-  Loss_valid = np.zeros([1,config['epochs']])
-  Loss_train = np.zeros([1,config['epochs']])
-  Acc_valid = np.zeros([1,config['epochs']])
-  Acc_train = np.zeros([1,config['epochs']])
+  Loss_valid = np.zeros([1,int(1.2*config['epochs'])])
+  Loss_train = np.zeros([1,int(1.2*config['epochs'])])
+  Acc_valid = np.zeros([1,int(1.2*config['epochs'])])
+  Acc_train = np.zeros([1,int(1.2*config['epochs'])])
   loss_best=math.inf
   
-  for epoch in range(config['epochs']):
+  for epoch in range(int(config['epochs']*1.2)):
       loss_tr=0
   #for epoch in range (15):  
       for i in range (int((X_train.shape[0])/(config['batch_size']))):
@@ -279,8 +280,8 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
       Acc_valid[:,epoch] = acc_valid
       Acc_train[:,epoch] = acc_train
       
-      if ((loss_valid<loss_best) and (epoch>config['early_stop_epoch'])):
-          print(epoch)
+      if loss_valid<loss_best and epoch>config['early_stop']:
+          print("run")
           loss_best=loss_valid
           model_best=model
   return model_best, Loss_valid, Loss_train, Acc_valid, Acc_train
@@ -319,9 +320,9 @@ if __name__ == "__main__":
   (model_best, Loss_valid, Loss_training, A_valid, A_training)=trainer(model, X_train, y_train, X_valid, y_valid, config)
   test_acc = test(model_best, X_test, y_test, config)
   #Plot cross-entropy loss
-  X=np.linspace(0,config['epochs'],50).reshape((50,1))
-  Y=Loss_valid.reshape((50,1))
-  Z=Loss_training.reshape((50,1))
+  X=np.linspace(0,config['epochs'],60).reshape((60,1))
+  Y=Loss_valid.reshape((60,1))
+  Z=Loss_training.reshape((60,1))
   fig = plt.figure(figsize=(20,10))
   ax = plt.subplot(111)
   ax.plot(X,Y,label='Training')
@@ -332,14 +333,14 @@ if __name__ == "__main__":
   ax.legend()
   plt.show()
   #plot accuracy
-  Y_v = A_valid.reshape((50,1))
-  Y_tr = A_training.reshape((50,1))
+  Y_v = A_valid.reshape((60,1))
+  Y_tr = A_training.reshape((60,1))
   fig = plt.figure(figsize=(20,10))
-  ax_ = plt.subplot(111)
-  ax_.plot(X,Y_tr,label='Training')
-  ax_.plot(X,Y_v,label='Validation')
+  ax = plt.subplot(111)
+  ax.plot(X,Y_tr,label='Training')
+  ax.plot(X,Y_v,label='Validation')
   plt.ylabel('Accuracy')
   plt.xlabel('Epochs')
   plt.title('Validation and Training Accuracy')
-  ax_.legend()
+  ax.legend()
   plt.show()
