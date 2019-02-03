@@ -10,8 +10,8 @@ import pickle
 import math
 import matplotlib.pyplot as plt
 config = {}
-config['layer_specs'] = [784, 100, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
-config['activation'] = 'tanh' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
+config['layer_specs'] = [784, 100, 10]  # The length of list denotes number of hidden layers; each element denotes number of neurons in that layer; first element is the size of input layer, last element is the size of output layer.
+config['activation'] = 'sigmoid' # Takes values 'sigmoid', 'tanh' or 'ReLU'; denotes activation function for hidden layers
 config['batch_size'] = 1000  # Number of training samples per batch to be passed to network
 config['epochs'] = 50  # Number of epochs to train the model
 config['early_stop'] = True  # Implement early stopping or not
@@ -125,7 +125,7 @@ class Activation:
 
 class Layer():
   def __init__(self, in_units, out_units):
-    
+    np.random.seed(40)
     self.w = np.random.randn(in_units, out_units)  # Weight matrix
     self.b = np.zeros((1, out_units)).astype(np.float32)  # Bias
     self.x = None  # Save the input to forward_pass in this
@@ -164,7 +164,7 @@ class Neuralnetwork():
     self.x = None  # Save the input to forward_pass in this
     self.y = None  # Save the output vector of model in this
     self.targets = None  # Save the targets in forward_pass in this variable
-    self.lr = 0.001
+    self.lr =  0.0009
     for i in range(len(config['layer_specs']) - 1):
       self.layers.append( Layer(config['layer_specs'][i], config['layer_specs'][i+1]) )
       if i < len(config['layer_specs']) - 2:
@@ -279,8 +279,8 @@ def trainer(model, X_train, y_train, X_valid, y_valid, config):
       Acc_valid[:,epoch] = acc_valid
       Acc_train[:,epoch] = acc_train
       
-      if loss_valid<loss_best:
-          print("run")
+      if ((loss_valid<loss_best) and (epoch>config['early_stop_epoch'])):
+          print(epoch)
           loss_best=loss_valid
           model_best=model
   return model_best, Loss_valid, Loss_train, Acc_valid, Acc_train
@@ -335,10 +335,11 @@ if __name__ == "__main__":
   Y_v = A_valid.reshape((50,1))
   Y_tr = A_training.reshape((50,1))
   fig = plt.figure(figsize=(20,10))
-  ax = plt.subplot(111)
-  ax.plot(X,Y_tr,label='Training')
-  ax.plot(X,Y_v,label='Validation')
+  ax_ = plt.subplot(111)
+  ax_.plot(X,Y_tr,label='Training')
+  ax_.plot(X,Y_v,label='Validation')
   plt.ylabel('Accuracy')
   plt.xlabel('Epochs')
   plt.title('Validation and Training Accuracy')
+  ax_.legend()
   plt.show()
